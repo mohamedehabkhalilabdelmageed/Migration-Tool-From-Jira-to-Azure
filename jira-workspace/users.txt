@@ -1,0 +1,16 @@
+$logDir = ".\jira-workspace\Logs"
+$usersFile = ".\jira-workspace\users.txt"
+
+$ids = Get-ChildItem $logDir -Filter *.txt -Recurse |
+  Select-String -Pattern '712020:[0-9a-f-]+' -AllMatches |
+  ForEach-Object { $_.Matches.Value } |
+  Sort-Object -Unique
+
+$lines = $ids | ForEach-Object { "$_=$ado" }
+$lines += @(
+  "*=Mohamed.Ehab",
+  "Mohamed.Ehab=$ado",
+  # Removed duplicate entry
+)
+
+$lines | Set-Content -Encoding UTF8 $usersFile
