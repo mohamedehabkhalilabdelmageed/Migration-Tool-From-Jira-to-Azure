@@ -1,4 +1,4 @@
-﻿using Common.Config;
+using Common.Config;
 using Migration.Common;
 using Migration.Common.Config;
 using Migration.Common.Log;
@@ -115,6 +115,9 @@ namespace JiraExport
                                 break;
                             case "MapRendered":
                                 value = r => FieldMapperUtils.MapRenderedValue(r, item.Source, isCustomField, _jiraProvider.GetCustomId(item.Source), _config);
+                                break;
+                            case "MapTestSteps":
+                                value = r => FieldMapperUtils.MapTestStepsValue(r, item.Source, isCustomField, _jiraProvider.GetCustomId(item.Source), _jiraProvider);
                                 break;
                             case "MapLexoRank":
                                 value = IfChanged<string>(item.Source, isCustomField, FieldMapperUtils.MapLexoRank);

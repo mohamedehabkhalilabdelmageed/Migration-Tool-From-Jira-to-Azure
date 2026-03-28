@@ -1,4 +1,4 @@
-﻿using Atlassian.Jira;
+using Atlassian.Jira;
 using Common.Config;
 using JiraExport.RevisionUtils;
 using Migration.Common;
@@ -12,7 +12,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace JiraExport
 {
@@ -146,6 +149,65 @@ namespace JiraExport
             value = CorrectRenderedHtmlvalue(value, r, config.IncludeJiraCssStyles);
 
             return (true, value);
+        }
+
+        public static (bool, object) MapTestStepsValue(JiraRevision r, string sourceField, bool isCustomField, string customFieldName, IJiraProvider jiraProvider)
+        {
+            if (r == null)
+                throw new ArgumentNullException(nameof(r));
+
+            var candidateSources = (sourceField ?? string.Empty).Split('|');
+            var singleConfiguredSource = candidateSources.Length == 1
+                && !string.IsNullOrWhiteSpace(candidateSources[0]);
+
+            if (jiraProvider != null && !string.IsNullOrWhiteSpace(jiraProvider.GetSettings().XrayClientId))
+            {
+                var xrayStepsJson = jiraProvider.GetXrayTestStepsGraphQL(r.ParentItem.Id ?? r.OriginId);
+                if (!string.IsNullOrWhiteSpace(xrayStepsJson))
+                {
+                    var stepsXml = BuildAzureTestStepsXml(xrayStepsJson);
+                    if (!string.IsNullOrWhiteSpace(stepsXml))
+                        return (true, stepsXml);
+                }
+            }
+
+            foreach (var candidate in candidateSources)
+            {
+                var trimmed = candidate?.Trim();
+                if (string.IsNullOrEmpty(trimmed))
+                    continue;
+
+                var resolved = ResolveStepSourceFieldKey(trimmed, isCustomField, customFieldName, singleConfiguredSource, jiraProvider);
+                var renderedField = resolved + "$Rendered";
+                if (r.Fields.TryGetValue(renderedField, out object renderedValue))
+                {
+                    var stepsXml = BuildAzureTestStepsXml(renderedValue?.ToString());
+                    return string.IsNullOrWhiteSpace(stepsXml) ? (false, null) : (true, stepsXml);
+                }
+
+                if (r.Fields.TryGetValue(resolved, out object rawValue))
+                {
+                    var stepsXml = BuildAzureTestStepsXml(rawValue?.ToString());
+                    return string.IsNullOrWhiteSpace(stepsXml) ? (false, null) : (true, stepsXml);
+                }
+            }
+
+            return (false, null);
+        }
+
+        private static string ResolveStepSourceFieldKey(string candidate, bool isCustomField, string customFieldName, bool singleConfiguredSource, IJiraProvider jiraProvider)
+        {
+            if (jiraProvider != null)
+            {
+                var id = jiraProvider.GetCustomId(candidate);
+                if (!string.IsNullOrEmpty(id))
+                    return id;
+            }
+
+            if (isCustomField && singleConfiguredSource && !string.IsNullOrEmpty(customFieldName))
+                return customFieldName;
+
+            return candidate;
         }
 
 
@@ -322,6 +384,170 @@ namespace JiraExport
         private static string ReplaceAzdoInvalidCharacters(string inputString)
         {
             return Regex.Replace(inputString, "[/$?*:\"&<>#%|+]", "", RegexOptions.None, TimeSpan.FromMilliseconds(100));
+        }
+
+        private static string BuildAzureTestStepsXml(string source)
+        {
+            var steps = ExtractStepPairs(source);
+            if (steps.Count == 0)
+                return null;
+
+            var sb = new StringBuilder();
+            sb.Append("<steps id=\"0\" last=\"");
+            sb.Append(steps.Count + 1);
+            sb.Append("\">");
+
+            for (int i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                var action = SecurityElement.Escape(step.Action ?? string.Empty) ?? string.Empty;
+                var expected = SecurityElement.Escape(step.Expected ?? string.Empty) ?? string.Empty;
+                sb.Append("<step id=\"");
+                sb.Append(i + 2);
+                sb.Append("\" type=\"ActionStep\">");
+                sb.Append("<parameterizedString isformatted=\"true\">");
+                sb.Append(action);
+                sb.Append("</parameterizedString>");
+                sb.Append("<parameterizedString isformatted=\"true\">");
+                sb.Append(expected);
+                sb.Append("</parameterizedString>");
+                sb.Append("<description/>");
+                sb.Append("</step>");
+            }
+
+            sb.Append("</steps>");
+            return sb.ToString();
+        }
+
+        private static List<(string Action, string Expected)> ExtractStepPairs(string source)
+        {
+            var result = new List<(string Action, string Expected)>();
+            if (string.IsNullOrWhiteSpace(source))
+                return result;
+
+            var trimmed = source.Trim();
+            var jsonSteps = TryExtractStepsFromJson(trimmed);
+            if (jsonSteps.Count > 0)
+                return jsonSteps;
+
+            var tableRowRegex = new Regex(@"<tr[^>]*>(.*?)</tr>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var tableCellRegex = new Regex(@"<t[dh][^>]*>(.*?)</t[dh]>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var rowMatches = tableRowRegex.Matches(source);
+            foreach (Match row in rowMatches)
+            {
+                var cells = tableCellRegex.Matches(row.Groups[1].Value)
+                    .Cast<Match>()
+                    .Select(m => HtmlToPlainText(m.Groups[1].Value))
+                    .ToList();
+
+                if (cells.All(string.IsNullOrWhiteSpace))
+                    continue;
+
+                if (cells.Count >= 3)
+                {
+                    var combinedAction = cells[0];
+                    if (!string.IsNullOrWhiteSpace(cells[1]))
+                    {
+                        if (!string.IsNullOrWhiteSpace(combinedAction))
+                            combinedAction += "\n\nData:\n" + cells[1];
+                        else
+                            combinedAction = cells[1];
+                    }
+                    result.Add((combinedAction, cells[2]));
+                }
+                else if (cells.Count == 2)
+                {
+                    result.Add((cells[0], cells[1]));
+                }
+                else if (cells.Count == 1)
+                {
+                    result.Add((cells[0], string.Empty));
+                }
+            }
+
+            if (result.Count > 0)
+                return result;
+
+            var plain = HtmlToPlainText(source);
+            var lines = plain
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => Regex.Replace(l, @"^\s*(\d+[\.\)]|[-*])\s*", "").Trim())
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .ToList();
+
+            foreach (var line in lines)
+                result.Add((line, string.Empty));
+
+            return result;
+        }
+
+        private static List<(string Action, string Expected)> TryExtractStepsFromJson(string source)
+        {
+            var output = new List<(string Action, string Expected)>();
+            if (!(source.StartsWith("{") || source.StartsWith("[")))
+                return output;
+
+            try
+            {
+                var token = JToken.Parse(source);
+                var candidates = token.Type == JTokenType.Array ? (JArray)token : token.SelectToken("$.steps") as JArray;
+                if (candidates == null)
+                    return output;
+
+                foreach (var step in candidates)
+                {
+                    var actionObj = step["action"]?.ToString() ?? step["step"]?.ToString();
+                    var dataObj = step["data"]?.ToString();
+                    var expectedObj = step["result"]?.ToString()
+                                   ?? step["expectedResult"]?.ToString()
+                                   ?? step["expected"]?.ToString();
+
+                    var combinedAction = string.Empty;
+                    if (!string.IsNullOrWhiteSpace(actionObj))
+                        combinedAction += HtmlToPlainText(actionObj);
+                        
+                    if (!string.IsNullOrWhiteSpace(dataObj))
+                    {
+                        var dataPlain = HtmlToPlainText(dataObj);
+                        if (!string.IsNullOrWhiteSpace(dataPlain))
+                        {
+                            if (!string.IsNullOrWhiteSpace(combinedAction))
+                                combinedAction += "\n\nData:\n" + dataPlain;
+                            else
+                                combinedAction = dataPlain;
+                        }
+                    }
+
+                    var expected = string.Empty;
+                    if (!string.IsNullOrWhiteSpace(expectedObj))
+                    {
+                        expected = HtmlToPlainText(expectedObj);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(combinedAction) || !string.IsNullOrWhiteSpace(expected))
+                    {
+                        output.Add((combinedAction, expected));
+                    }
+                }
+            }
+            catch
+            {
+                return output;
+            }
+
+            return output;
+        }
+
+        private static string HtmlToPlainText(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            var text = Regex.Replace(input, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"</p\s*>", "\n", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, "<.*?>", string.Empty);
+            text = HttpUtility.HtmlDecode(text);
+            return text?.Trim() ?? string.Empty;
         }
     }
 

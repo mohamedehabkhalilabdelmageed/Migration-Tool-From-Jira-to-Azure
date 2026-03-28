@@ -1,4 +1,4 @@
-﻿using Common.Config;
+using Common.Config;
 using Microsoft.Extensions.CommandLineUtils;
 using Migration.Common.Config;
 using Migration.Common.Log;
@@ -93,7 +93,9 @@ namespace JiraExport
                     UsingJiraCloud = config.UsingJiraCloud,
                     IncludeDevelopmentLinks = config.IncludeDevelopmentLinks,
                     RepositoryMap = config.RepositoryMap,
-                    JiraApiVersion = config.JiraApiVersion
+                    JiraApiVersion = config.JiraApiVersion,
+                    XrayClientId = config.XrayClientId,
+                    XrayClientSecret = config.XrayClientSecret
                 };
 
                 var jiraServiceWrapper = new JiraServiceWrapper(jiraSettings);

@@ -1,4 +1,4 @@
-﻿using Migration.Common.Config;
+using Migration.Common.Config;
 
 using Newtonsoft.Json;
 
@@ -92,6 +92,12 @@ namespace Common.Config
 
         [JsonProperty(PropertyName = "jira-api-version")]
         public int JiraApiVersion { get; set; } = 3;
+
+        [JsonProperty(PropertyName = "xray-client-id")]
+        public string XrayClientId { get; set; }
+
+        [JsonProperty(PropertyName = "xray-client-secret")]
+        public string XrayClientSecret { get; set; }
 
     }
 }

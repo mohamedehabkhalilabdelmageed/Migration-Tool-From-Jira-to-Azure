@@ -1,4 +1,4 @@
-﻿
+
 using Migration.Common.Config;
 using Newtonsoft.Json.Linq;
 
@@ -21,6 +21,8 @@ namespace JiraExport
         public bool IncludeDevelopmentLinks { get; set; }
         public int JiraApiVersion { get; set; }
         public RepositoryMap RepositoryMap { get; set; }
+        public string XrayClientId { get; set; }
+        public string XrayClientSecret { get; set; }
 
         public JiraSettings(string userID, string pass, string token, string url, string project)
         {

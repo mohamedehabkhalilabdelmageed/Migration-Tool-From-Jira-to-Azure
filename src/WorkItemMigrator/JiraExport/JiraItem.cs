@@ -1,6 +1,7 @@
-﻿using Atlassian.Jira;
+using Atlassian.Jira;
 using Migration.Common;
 using Migration.Common.Log;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -47,7 +48,14 @@ namespace JiraExport
                 Logger.Log(LogLevel.Debug, "created key was not found, using DateTime default value");
 
             var changelog = jiraProvider.DownloadChangelog(issueKey).OrderByDescending(c => (long)c.SelectToken("$.id")).ToList();
-            Logger.Log(LogLevel.Debug, $"Downloaded issue: {issueKey} changelog.");
+            if (changelog.Count > 0)
+            {
+                Logger.Log(LogLevel.Debug, $"Downloaded issue: {issueKey} changelog with {changelog.Count} entries.");
+            }
+            else
+            {
+                Logger.Log(LogLevel.Warning, $"No changelog entries found for issue: {issueKey}. Migration will continue with initial revision only.");
+            }
 
             Stack<JiraRevision> revisions = new Stack<JiraRevision>();
 
@@ -220,11 +228,19 @@ namespace JiraExport
 
         private static List<JiraRevision> BuildCommentRevisions(JiraItem jiraItem, IJiraProvider jiraProvider)
         {
-            var comments = jiraProvider.GetCommentsByItemKey(jiraItem.Key);
-            return comments.Select((c, i) =>
+            try
             {
-                return BuildCommentRevision(c, c.RenderedBody, jiraItem);
-            }).ToList();
+                var comments = jiraProvider.GetCommentsByItemKey(jiraItem.Key);
+                return comments.Select((c, i) =>
+                {
+                    return BuildCommentRevision(c, c.RenderedBody, jiraItem);
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Warning, $"Failed to retrieve comments for issue {jiraItem.Key}: {ex.Message}. Continuing migration without comments for this issue.");
+                return new List<JiraRevision>();
+            }
         }
 
         private static JiraRevision BuildCommentRevision(Comment c, string rc, JiraItem jiraItem)
@@ -512,6 +528,12 @@ namespace JiraExport
                         // Failsafe if all other checks results in an array with correct length but empty elements
                         value = string.Join(";", prop.Value.Children().ToList());
                     }
+                    var asString = value?.ToString() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(asString) || asString.All(c => c == ';' || char.IsWhiteSpace(c)))
+                    {
+                        // Structured arrays (e.g. Xray/Zephyr manual steps) — preserve JSON for MapTestSteps / mappers
+                        value = prop.Value.ToString(Formatting.None);
+                    }
                 }
                 else if (type == Newtonsoft.Json.Linq.JTokenType.Object && prop.Value["value"] != null)
                 {
@@ -520,6 +542,10 @@ namespace JiraExport
                 else if (type == Newtonsoft.Json.Linq.JTokenType.Object && prop.Value["name"] != null)
                 {
                     value = prop.Value["name"].ToString();
+                }
+                else if (type == JTokenType.Object)
+                {
+                    value = prop.Value.ToString(Formatting.None);
                 }
 
                 if (value != null)

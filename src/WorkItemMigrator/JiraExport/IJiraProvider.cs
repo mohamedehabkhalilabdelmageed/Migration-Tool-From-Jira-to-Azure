@@ -1,4 +1,4 @@
-﻿using Atlassian.Jira;
+using Atlassian.Jira;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -33,5 +33,7 @@ namespace JiraExport
         Task<List<RevisionAction<JiraAttachment>>> DownloadAttachments(JiraRevision rev);
 
         IEnumerable<JObject> GetCommitRepositories(string issueId);
+
+        string GetXrayTestStepsGraphQL(string issueId);
     }
 }

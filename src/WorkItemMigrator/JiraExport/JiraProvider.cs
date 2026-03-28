@@ -1,4 +1,4 @@
-﻿using Atlassian.Jira;
+using Atlassian.Jira;
 using Migration.Common;
 using Migration.Common.Log;
 using Newtonsoft.Json.Linq;
@@ -111,9 +111,17 @@ namespace JiraExport
 
         public IEnumerable<Comment> GetCommentsByItemKey(string itemKey)
         {
-            var options = new CommentQueryOptions();
-            options.Expand.Add("renderedBody");
-            return _jiraServiceWrapper.Issues.GetCommentsAsync(itemKey, options).Result;
+            try
+            {
+                var options = new CommentQueryOptions();
+                options.Expand.Add("renderedBody");
+                return _jiraServiceWrapper.Issues.GetCommentsAsync(itemKey, options).Result;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Warning, $"Error retrieving comments for issue {itemKey}: {ex.Message}");
+                return Enumerable.Empty<Comment>();
+            }
         }
 
         public CustomField GetCustomField(string fieldName)
@@ -469,8 +477,16 @@ namespace JiraExport
 
         public IEnumerable<JObject> DownloadChangelog(string issueKey)
         {
-            var response = (JObject)_jiraServiceWrapper.RestClient.ExecuteRequestAsync(Method.GET, $"{JiraApi}/{Settings.JiraApiVersion}/issue/{issueKey}?expand=changelog,renderedFields&fields=created").Result;
-            return response.SelectTokens("$.changelog.histories[*]").Cast<JObject>();
+            try
+            {
+                var response = (JObject)_jiraServiceWrapper.RestClient.ExecuteRequestAsync(Method.GET, $"{JiraApi}/{Settings.JiraApiVersion}/issue/{issueKey}?expand=changelog,renderedFields&fields=created").Result;
+                return response.SelectTokens("$.changelog.histories[*]").Cast<JObject>();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Warning, $"Error retrieving changelog for issue {issueKey}: {ex.Message}");
+                return Enumerable.Empty<JObject>();
+            }
         }
 
         public JObject DownloadIssue(string key)
@@ -613,6 +629,66 @@ namespace JiraExport
         {
             var response = (JObject)_jiraServiceWrapper.RestClient.ExecuteRequestAsync(Method.GET, $"/rest/dev-status/latest/issue/detail?issueId={issueId}&applicationType=stash&dataType=repository").Result;
             return response.SelectTokens("$.detail[*].repositories[*]").Cast<JObject>();
+        }
+
+        private string _xrayBearerToken = null;
+
+        public string GetXrayTestStepsGraphQL(string issueId)
+        {
+            if (string.IsNullOrWhiteSpace(Settings.XrayClientId) || string.IsNullOrWhiteSpace(Settings.XrayClientSecret))
+                return null;
+
+            if (string.IsNullOrWhiteSpace(_xrayBearerToken))
+            {
+                var authClient = new RestClient("https://xray.cloud.getxray.app/api/v2");
+                var authRequest = new RestRequest("authenticate", Method.POST);
+                authRequest.AddHeader("Content-Type", "application/json");
+                authRequest.AddJsonBody(new { client_id = Settings.XrayClientId, client_secret = Settings.XrayClientSecret });
+
+                var authResponse = authClient.Execute(authRequest);
+                if (!authResponse.IsSuccessful)
+                {
+                    Logger.Log(LogLevel.Error, $"Failed to authenticate with Xray Cloud: {authResponse.ErrorMessage} {authResponse.Content}");
+                    return null;
+                }
+
+                _xrayBearerToken = authResponse.Content.Trim('"');
+            }
+
+            var gqlClient = new RestClient("https://xray.cloud.getxray.app/api/v2");
+            var gqlRequest = new RestRequest("graphql", Method.POST);
+            gqlRequest.AddHeader("Authorization", $"Bearer {_xrayBearerToken}");
+            gqlRequest.AddHeader("Content-Type", "application/json");
+
+            var query = new
+            {
+                query = $"{{ getTest(issueId: \"{issueId}\") {{ steps {{ id action data result }} }} }}"
+            };
+            gqlRequest.AddJsonBody(query);
+
+            var response = gqlClient.Execute(gqlRequest);
+            if (!response.IsSuccessful)
+            {
+                Logger.Log(LogLevel.Error, $"Failed to fetch Xray steps for issueId {issueId}: {response.ErrorMessage} {response.Content}");
+                return null;
+            }
+
+            try
+            {
+                var jsonResp = JObject.Parse(response.Content);
+                var stepsToken = jsonResp.SelectToken("$.data.getTest.steps");
+                if (stepsToken == null)
+                {
+                    return null;
+                }
+
+                return stepsToken.ToString(Newtonsoft.Json.Formatting.None);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Error, $"Failed to parse Xray steps for issueId {issueId}: {ex.Message}");
+                return null;
+            }
         }
     }
 }

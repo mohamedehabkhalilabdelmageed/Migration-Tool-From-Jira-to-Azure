@@ -1,9 +1,11 @@
 {
-  "source-project": "SBP",
-  "target-project": "Jira - Smart Box",
-  "query": "project = \"SBP\" ORDER BY created DESC",
+  "source-project": "",
+  "target-project": "",
+  "xray-client-id": "",
+  "xray-client-secret": "",
+  "query": "",
   "using-jira-cloud": true,
-  "workspace": "F:\\Automation\\jira-workspace\\",
+  "workspace": "",
   "epic-link-field": "Epic Link",
   "sprint-field": "Sprint",
   "download-options": 7,
@@ -15,85 +17,464 @@
   "base-iteration-path": "migrated",
   "ignore-failed-links": true,
   "process-template": "Scrum",
-  "link-map": { "link": [] },
+  "link-map": {
+    "link": []
+  },
   "type-map": {
-  "type": [
-    { "source": "Epic (migrated)", "target": "Epic" },
-    { "source": "Epic",            "target": "Epic" },
-    { "source": "Story",           "target": "User Story" },
-    { "source": "Task",            "target": "Task" },
-    { "source": "Sub-task",        "target": "Task" },
-    { "source": "Bug",             "target": "Bug" },
-    { "source": "Test",            "target": "Test Case" },
-    { "source": "Test Set",        "target": "Test Case" },
-    { "source": "Sub Test Execution",       "target": "Test Case" },
-    { "source": "Incident",       "target": "Bug" },
-    { "source": "Enhancement",       "target": "Enhancement" },
-    { "source": "Test Execution",       "target": "Test Case" },
-    { "source": "Feature",       "target": "User Story" },
-    { "source": "Bug [Sub-Task]",       "target": "Bug" }
-  ]
-},
-  "field-map": { "field": [
-  { "source": "summary",     "target": "System.Title",       "mapper": "MapTitle" },
-  { "source": "Story points", "source-type": "name", "target": "Microsoft.VSTS.Scheduling.StoryPoints", "for": "User Story", "type": "string" },
-  { "source": "customfield_10526", "target": "Microsoft.VSTS.Common.AcceptanceCriteria", "for": "User Story", "mapper": "MapRendered" },
-  { "source": "description", "target": "System.Description", "for": "Epic,User Story,Task", "mapper": "MapRendered" },
-  { "source": "description", "target": "Microsoft.VSTS.TCM.Steps",      "for": "Test Case", "mapper": "MapRendered" },
-  { "source": "labels", "target": "System.Tags", "mapper": "MapTags" },
-  { "source": "comment",     "target": "System.History",     "mapper": "MapRendered" },
-  { "source": "assignee", "target": "System.AssignedTo", "mapper": "MapUser" },
-  { "source": "reporter", "target": "System.CreatedBy", "mapper": "MapUser" },
-  { "source": "customfield_10427|description", "target": "Microsoft.VSTS.TCM.ReproSteps", "for": "Bug",       "mapper": "MapRendered" },
-  { "source": "customfield_10263", "target": "Microsoft.VSTS.Common.Severity", "for": "Bug",
-    "mapping": { "values": [
-      { "source": "Blocker",  "target": "Showstopper" },
-      { "source": "Critical", "target": "Critical" },
-      { "source": "High",     "target": "Critical" },
-      { "source": "Major",    "target": "Major" },
-      { "source": "Medium",   "target": "Major" },
-      { "source": "Minor",    "target": "Minor" },
-      { "source": "Low",      "target": "Trivial" },
-      { "source": "Trivial",  "target": "Trivial" }
-    ]}},
-  {
-    "source": "status",
-    "target": "System.State",
-    "mapping": {
-      "values": [
-        { "source": "Open",                    "target": "New" },
-        { "source": "To Do",                   "target": "To Do" },
-        { "source": "Selected for Development","target": "New" },
-        { "source": "Backlog",                 "target": "New" },
-        { "source": "Ready",                   "target": "New" },
-        { "source": "In Progress",             "target": "In Progress" },
-        { "source": "In Review",               "target": "Active" },
-        { "source": "Testing",                 "target": "Active" },
-        { "source": "Blocked",                 "target": "Blocked" },
-        { "source": "On Hold",                 "target": "Active" },
-        { "source": "Ready for Testing",       "target": "Ready For Testing" },
-        { "source": "Ready for QC verification",       "target": "Ready For Testing" },
-        { "source": "In Testing",              "target": "In Testing" },
-        { "source": "Code Review",             "target": "Code Review" },
-        { "source": "Draft",                   "target": "To Do" },
-        { "source": "Resolved",                "target": "Resolved" },
-        { "source": "Done",                    "target": "Done" },
-        { "source": "Pass",                    "target": "Resolved" },
-        { "source": "Fail",                    "target": "Resolved" },
-        { "source": "Cancelled",               "target": "Closed" },
-        { "source": "Closed",                  "target": "Closed" },
-        { "source": "Reopened",                "target": "Active" },
-        { "source": "Reopen",                  "target": "Re Open" },
-        { "source": "Can't Reproduced",                  "target": "Closed" },
-        { "source": "Released",                  "target": "Closed" },
-        { "source": "Under business verification",                  "target": "Active" },
-        { "source": "Business validation",                  "target": "To Do" },
-        { "source": "In QC review",                  "target": "Active" },
-        { "source": "Technical Support investigate",                  "target": "Active" },
-        { "source": "Ready for next deployment",                  "target": "Done" },
-        { "source": "In Technical Action",                  "target": "Code Review" }
-      ]
-    }
+    "type": [
+      {
+        "source": "Epic (migrated)",
+        "target": "Epic"
+      },
+      {
+        "source": "Epic",
+        "target": "Epic"
+      },
+      {
+        "source": "Story",
+        "target": "User Story"
+      },
+      {
+        "source": "Test Plan",
+        "target": "Test Case"
+      },
+      {
+        "source": "Task",
+        "target": "Task"
+      },
+      {
+        "source": "Sub-task",
+        "target": "Task"
+      },
+      {
+        "source": "Bug",
+        "target": "Bug"
+      },
+      {
+        "source": "Test",
+        "target": "Test Case"
+      },
+      {
+        "source": "Test Set",
+        "target": "Test Case"
+      },
+      {
+        "source": "Sub Test Execution",
+        "target": "Test Case"
+      },
+      {
+        "source": "Precondition",
+        "target": "Test Case"
+      },
+      {
+        "source": "Incident",
+        "target": "Bug"
+      },
+      {
+        "source": "Enhancement",
+        "target": "Enhancement"
+      },
+      {
+        "source": "Test Execution",
+        "target": "Test Case"
+      },
+      {
+        "source": "Feature",
+        "target": "User Story"
+      },
+      {
+        "source": "Bug [Sub-Task]",
+        "target": "Bug"
+      },
+      {
+        "source": "Sub-task-test",
+        "target": "Task"
+      },
+      {
+        "source": "Activity",
+        "target": "Task"
+      },
+      {
+        "source": "Subtask",
+        "target": "Task"
+      },
+      {
+        "source": "Bug [Sub-Task]",
+        "target": "Bug"
+      },
+      {
+        "source": "Sub-task-test",
+        "target": "Task"
+      },
+      {
+        "source": "Activity",
+        "target": "Task"
+      }
+    ]
+  },
+  "field-map": {
+    "field": [
+      {
+        "source": "summary",
+        "target": "System.Title",
+        "mapper": "MapTitle"
+      },
+      {
+        "source": "Story points",
+        "source-type": "name",
+        "target": "Microsoft.VSTS.Scheduling.StoryPoints",
+        "for": "User Story",
+        "type": "string"
+      },
+      {
+        "source": "customfield_10526",
+        "target": "Microsoft.VSTS.Common.AcceptanceCriteria",
+        "for": "User Story",
+        "mapper": "MapRendered"
+      },
+      {
+        "source": "description",
+        "target": "System.Description",
+        "for": "Epic,User Story,Task,Test Case",
+        "mapper": "MapRendered"
+      },
+      {
+        "source": "Test Procedure|Manual Test Steps|description",
+        "target": "Microsoft.VSTS.TCM.Steps",
+        "for": "Test Case",
+        "mapper": "MapTestSteps"
+      },
+      {
+        "source": "labels",
+        "target": "System.Tags",
+        "mapper": "MapTags"
+      },
+      {
+        "source": "comment",
+        "target": "System.History",
+        "mapper": "MapRendered"
+      },
+      {
+        "source": "assignee",
+        "target": "System.AssignedTo",
+        "mapper": "MapUser"
+      },
+      {
+        "source": "reporter",
+        "target": "System.CreatedBy",
+        "mapper": "MapUser"
+      },
+      {
+        "source": "customfield_10427|description",
+        "target": "Microsoft.VSTS.TCM.ReproSteps",
+        "for": "Bug",
+        "mapper": "MapRendered"
+      },
+      {
+        "source": "customfield_10263",
+        "target": "Microsoft.VSTS.Common.Severity",
+        "for": "Bug",
+        "mapping": {
+          "values": [
+            {
+              "source": "Blocker",
+              "target": "Showstopper"
+            },
+            {
+              "source": "Critical",
+              "target": "Critical"
+            },
+            {
+              "source": "High",
+              "target": "Critical"
+            },
+            {
+              "source": "Major",
+              "target": "Major"
+            },
+            {
+              "source": "Medium",
+              "target": "Major"
+            },
+            {
+              "source": "Minor",
+              "target": "Minor"
+            },
+            {
+              "source": "Low",
+              "target": "Trivial"
+            },
+            {
+              "source": "Trivial",
+              "target": "Trivial"
+            }
+          ]
+        }
+      },
+      {
+        "source": "status",
+        "target": "System.State",
+        "mapping": {
+          "values": [
+            {
+              "source": "Open",
+              "target": "New"
+            },
+            {
+              "source": "To Do",
+              "target": "To Do"
+            },
+            {
+              "source": "Selected for Development",
+              "target": "New"
+            },
+            {
+              "source": "Backlog",
+              "target": "New"
+            },
+            {
+              "source": "Ready",
+              "target": "New"
+            },
+            {
+              "source": "In Progress",
+              "target": "In Progress"
+            },
+            {
+              "source": "In Review",
+              "target": "Active"
+            },
+            {
+              "source": "Testing",
+              "target": "Active"
+            },
+            {
+              "source": "Blocked",
+              "target": "Blocked"
+            },
+            {
+              "source": "On Hold",
+              "target": "Active"
+            },
+            {
+              "source": "Ready for Testing",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready for QC verification",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "In Testing",
+              "target": "In Testing"
+            },
+            {
+              "source": "Code Review",
+              "target": "Code Review"
+            },
+            {
+              "source": "Draft",
+              "target": "New"
+            },
+            {
+              "source": "Resolved",
+              "target": "Resolved"
+            },
+            {
+              "source": "Done",
+              "target": "Done"
+            },
+            {
+              "source": "Pass",
+              "target": "Resolved"
+            },
+            {
+              "source": "Fail",
+              "target": "Resolved"
+            },
+            {
+              "source": "Cancelled",
+              "target": "Closed"
+            },
+            {
+              "source": "Closed",
+              "target": "Closed"
+            },
+            {
+              "source": "Reopened",
+              "target": "Active"
+            },
+            {
+              "source": "Re-open",
+              "target": "Active"
+            },
+            {
+              "source": "Reopen",
+              "target": "Active"
+            },
+            {
+              "source": "Dev Testing",
+              "target": "Active"
+            },
+            {
+              "source": "Dev testing",
+              "target": "Active"
+            },
+            {
+              "source": "Rejected",
+              "target": "Closed"
+            },
+            {
+              "source": "Rejected Bugs",
+              "target": "Closed"
+            },
+            {
+              "source": "Can't Reproduced",
+              "target": "Closed"
+            },
+            {
+              "source": "Released",
+              "target": "Closed"
+            },
+            {
+              "source": "Under business verification",
+              "target": "Active"
+            },
+            {
+              "source": "Business validation",
+              "target": "To Do"
+            },
+            {
+              "source": "In QC review",
+              "target": "Active"
+            },
+            {
+              "source": "Technical Support investigate",
+              "target": "Active"
+            },
+            {
+              "source": "Ready for next deployment",
+              "target": "Done"
+            },
+            {
+              "source": "In Technical Action",
+              "target": "Code Review"
+            },
+            {
+              "source": "Ready for testing",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready For Testing",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "ready for testing",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Rady for testing",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready for Testing - Bug",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready for Testing - Task",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready for Testing - User Story",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Not a Bug",
+              "target": "Closed"
+            },
+            {
+              "source": "Ready for Development",
+              "target": "To Do"
+            },
+            {
+              "source": "Ready for Review",
+              "target": "Active"
+            },
+            {
+              "source": "Ready for Deployment",
+              "target": "Done"
+            },
+            {
+              "source": "Not a Bug",
+              "target": "Closed"
+            },
+            {
+              "source": "Ready for Development",
+              "target": "To Do"
+            },
+            {
+              "source": "Ready for Review",
+              "target": "Active"
+            },
+            {
+              "source": "Ready for Deployment",
+              "target": "Done"
+            },
+            {
+              "source": "ready for test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready for test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready For Test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Enhancement - ready for test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "User Story - ready for test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Bug - ready for test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Task - ready for test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Enhancement Ready for Test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "User Story Ready for Test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Bug Ready for Test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Task Ready for Test",
+              "target": "Ready For Testing"
+            },
+            {
+              "source": "Ready for Launch",
+              "target": "Done"
+            },
+            {
+              "source": "Launched",
+              "target": "Done"
+            }
+          ]
+        }
+      }
+    ]
   }
-]}
 }
